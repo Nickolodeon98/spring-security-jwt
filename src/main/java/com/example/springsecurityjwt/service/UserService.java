@@ -1,6 +1,7 @@
 package com.example.springsecurityjwt.service;
 
 import com.example.springsecurityjwt.configuration.JwtTokenProvider;
+import com.example.springsecurityjwt.domain.dto.UserLoginRequest;
 import com.example.springsecurityjwt.domain.entity.User;
 import com.example.springsecurityjwt.domain.entity.UserRole;
 import com.example.springsecurityjwt.repository.UserRepository;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final JwtTokenProvider jwtTokenProvider;
+//    private final JwtTokenProvider jwtTokenProvider;
 
 
     public UserDetails loadUserByUsername(String username) {
@@ -24,6 +25,10 @@ public class UserService {
 //        UserDetails user = userRepository.findByUsername(username);
         UserRole role = UserRole.USER;
 
-        return jwtTokenProvider.createToken(username, role);
+        return JwtTokenProvider.createToken(username, role);
+    }
+
+    public User register(UserLoginRequest userLoginRequest) {
+        return userRepository.save(userLoginRequest.toEntity());
     }
 }
