@@ -11,21 +11,25 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
 
+@Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
     @Value("${jwt.token.secret}")
-    private String secretKey;
-    private final long expiryDateMs = 1000L * 60 * 60;
+    private static String secretKey;
+    private final static long expiryDateMs = 1000L * 60 * 60;
     private final UserService userService;
 
 
     public Jws<Claims> extractClaims(String token) {
-        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+        return Jwts.parser().setSigningKey("secretKey").parseClaimsJws(token);
     }
 
     public String getUserName(String jwtToken) {
@@ -34,7 +38,7 @@ public class JwtTokenProvider {
         // 이렇게 해도 되고 extractClaims 메서드 만들어서 클레임 추출 한 다음에 getUserName 또 따로 해도 됩니다.
     }
 
-    public String createToken(String username, UserRole userRole) {
+    public static String createToken(String username, UserRole userRole) {
         Claims claims = Jwts.claims().setSubject(username);
         claims.put("role", userRole);
         Date now = new Date();
@@ -43,7 +47,7 @@ public class JwtTokenProvider {
                 .setClaims(claims)
                 .setIssuedAt(now)
                 .setExpiration(new Date(now.getTime() + expiryDateMs))
-                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .signWith(SignatureAlgorithm.HS256, "secretKey")
                 .compact();
 
         return token;
@@ -52,9 +56,9 @@ public class JwtTokenProvider {
     /* 토큰이 생성된 후 AuthenticationFilter 를 통해 인증을 받은 후에 토큰의 인증정보를 SecurityContextHolder 에 저장하기 위해
      * Authentication 객체를 만들어주는 메서드입니다. */
     public Authentication getAuthentication(String token) {
-        UserDetails userDetails = userService.loadUserByUsername(this.getUserName(token));
-
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+//        UserDetails userDetails = userService.loadUserByUsername(this.getUserName(token));
+//        userDetails.getAuthorities()
+        return new UsernamePasswordAuthenticationToken("", "", List.of(new SimpleGrantedAuthority(UserRole.USER.name())));
     }
 
     public boolean validateToken(String token) {
